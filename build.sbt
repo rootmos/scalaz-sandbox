@@ -20,3 +20,12 @@ initialCommands in console := Seq(
   "import scalaz._, Scalaz._",
   "import shapeless._"
 ).mkString("; ")
+
+scalacOptions ++= Seq(
+  "-language:higherKinds",
+  "-feature",
+  "-Ywarn-unused",
+  "-Ywarn-unused-import",
+  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Xlint")
