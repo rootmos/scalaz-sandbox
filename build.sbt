@@ -14,14 +14,15 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.2"
 )
 
-//scalacOptions ++= Seq("-feature", "-Xlog-implicits")
 
 initialCommands in console := Seq(
   "import scalaz._, Scalaz._",
   "import shapeless._"
 ).mkString("; ")
 
-scalacOptions ++= Seq(
+//scalacOptions ++= Seq("-Xlog-implicits")
+
+scalacOptions in Compile ++= Seq(
   "-language:higherKinds",
   "-feature",
   "-Ywarn-unused",
@@ -29,3 +30,8 @@ scalacOptions ++= Seq(
   "-Ywarn-dead-code",
   "-Ywarn-numeric-widen",
   "-Xlint")
+
+scalacOptions in (Compile, console) := Seq(
+  "-language:higherKinds",
+  "-feature")
+
