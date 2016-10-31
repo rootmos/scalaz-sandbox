@@ -1,5 +1,6 @@
 import org.scalatest._
 import shapeless.test.illTyped
+import scala.reflect.runtime.universe._
 
 class ProofAssistantExample extends WordSpec with Matchers {
   "ProofAssistantExample" should {
@@ -42,24 +43,27 @@ class ProofAssistantExample extends WordSpec with Matchers {
     }
 
     "either is disjunction" when {
-      class Proof[T]
+      sealed trait Proof[T]
+      case class DisjunctionProof1[T, S](e: Either[Proof[T], Proof[S]]) extends Proof[Either[T, S]]
+      case class DisjunctionProof2[T, S](t: Proof[T], s: Proof[S]) extends Proof[Either[T, S]]
+      class Axiom[T: WeakTypeTag] extends Proof[T] {
+        override def toString = s"Axiom for ${weakTypeOf[T]}"
+      }
 
-      object Proof extends LowPriorityDisjunctionProofs
+      object Proof extends LowPriorityDisjunctionProofs {
+        def apply[T: WeakTypeTag]: Proof[T] = new Axiom[T]
+      }
 
       trait LowPriorityDisjunctionProofs {
-        implicit def disjunction1[T, S](implicit t: Proof[T]): Proof[Either[T,S]] = new Proof[Either[T, S]]
-        implicit def disjunction2[T, S](implicit s: Proof[S]): Proof[Either[T,S]] = new Proof[Either[T, S]]
+        implicit def disjunction1[T, S](implicit t: Proof[T]): Proof[Either[T,S]] = DisjunctionProof1[T, S](Left(t))
+        implicit def disjunction2[T, S](implicit s: Proof[S]): Proof[Either[T,S]] = DisjunctionProof1[T, S](Right(s))
       }
 
-      object Proofs {
-        implicit def disjunctionP12[T, S](implicit t: Proof[T], s: Proof[S]): Proof[Either[T, S]] = new Proof[Either[T, S]]
-      }
-
-      import Proofs._
+      implicit def disjunction12[T, S](implicit t: Proof[T], s: Proof[S]): Proof[Either[T, S]] = DisjunctionProof2(t, s)
 
       "A, B => (A or B)" in {
-        implicit val proofA = new Proof[A]
-        implicit val proofB = new Proof[B]
+        implicit val proofA = Proof[A]
+        implicit val proofB = Proof[B]
 
         implicitly[Proof[Either[A, B]]]
       }
@@ -69,12 +73,12 @@ class ProofAssistantExample extends WordSpec with Matchers {
       }
 
       "A, not B => (A or B)" in {
-        implicit val proof = new Proof[A]
+        implicit val proof = Proof[A]
         implicitly[Proof[Either[A, B]]]
       }
 
       "not A, B => not (A and B)" in {
-        implicit val proof = new Proof[B]
+        implicit val proof = Proof[B]
         implicitly[Proof[Either[A, B]]]
       }
     }
