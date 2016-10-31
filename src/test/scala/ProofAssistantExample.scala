@@ -42,29 +42,40 @@ class ProofAssistantExample extends WordSpec with Matchers {
     }
 
     "either is disjunction" when {
-      implicit def disjunction1[T, S](implicit t: T): Either[T,S] = Left(t)
-      implicit def disjunction2[T, S](implicit s: S): Either[T,S] = Right(s)
+      class Proof[T]
 
-      // TODO: Can this ever be unambiguous?
-      //"A, B => (A or B)" in {
-      //  implicit val proofA = new A
-      //  implicit val proofB = new B
+      object Proof extends LowPriorityDisjunctionProofs
 
-      //  implicitly[Either[A, B]]
-      //}
+      trait LowPriorityDisjunctionProofs {
+        implicit def disjunction1[T, S](implicit t: Proof[T]): Proof[Either[T,S]] = new Proof[Either[T, S]]
+        implicit def disjunction2[T, S](implicit s: Proof[S]): Proof[Either[T,S]] = new Proof[Either[T, S]]
+      }
+
+      object Proofs {
+        implicit def disjunctionP12[T, S](implicit t: Proof[T], s: Proof[S]): Proof[Either[T, S]] = new Proof[Either[T, S]]
+      }
+
+      import Proofs._
+
+      "A, B => (A or B)" in {
+        implicit val proofA = new Proof[A]
+        implicit val proofB = new Proof[B]
+
+        implicitly[Proof[Either[A, B]]]
+      }
 
       "not A, not B => not (A or B)" in {
-        illTyped { """implicitly[Either[A, B]]""" }
+        illTyped { """implicitly[Proof[Either[A, B]]]""" }
       }
 
       "A, not B => (A or B)" in {
-        implicit val proof = new A
-        implicitly[Either[A, B]]
+        implicit val proof = new Proof[A]
+        implicitly[Proof[Either[A, B]]]
       }
 
       "not A, B => not (A and B)" in {
-        implicit val proof = new B
-        implicitly[Either[A, B]]
+        implicit val proof = new Proof[B]
+        implicitly[Proof[Either[A, B]]]
       }
     }
   }
