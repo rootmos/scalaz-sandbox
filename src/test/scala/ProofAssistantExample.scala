@@ -1,6 +1,5 @@
 import org.scalatest._
 import shapeless.test.illTyped
-import scala.reflect.runtime.universe._
 
 class ProofAssistantExample extends WordSpec with Matchers {
   "ProofAssistantExample" should {
@@ -43,52 +42,46 @@ class ProofAssistantExample extends WordSpec with Matchers {
     }
 
     "either is disjunction" when {
-      sealed trait Proof[T]
-      class DisjunctionProofT[T: WeakTypeTag, S: WeakTypeTag](t: Proof[T]) extends Proof[Either[T, S]] {
-        override def toString = s"$t => ${weakTypeOf[T]} || ${weakTypeOf[S]}"
+      
+      sealed trait Disjunction[T, S] {
+        def toEither: Either[T, S] = this match {
+          case FromT(t) => Left(t)
+          case FromS(s) => Right(s)
+          case FromTS(t, _) => Left(t)
+        }
       }
-      class DisjunctionProofS[T: WeakTypeTag, S: WeakTypeTag](s: Proof[S]) extends Proof[Either[T, S]] {
-        override def toString = s"$s => ${weakTypeOf[T]} || ${weakTypeOf[S]}"
-      }
+      case class FromT[T, S](t: T) extends Disjunction[T, S]
+      case class FromS[T, S](s: S) extends Disjunction[T, S]
+      case class FromTS[T, S](t: T, s: S) extends Disjunction[T, S]
 
-      class DisjunctionProofTS[T: WeakTypeTag, S: WeakTypeTag](t: Proof[T], s: Proof[S]) extends Proof[Either[T, S]] {
-        override def toString = s"$t && $s => ${weakTypeOf[T]} || ${weakTypeOf[S]}"
-      }
-
-      class Axiom[T: WeakTypeTag] extends Proof[T] {
-        override def toString = weakTypeOf[T].toString
-      }
-
-      object Proof extends LowPriorityDisjunctionProofs {
-        def apply[T: WeakTypeTag]: Proof[T] = new Axiom[T]
-      }
+      object Disjunction extends LowPriorityDisjunctionProofs
 
       trait LowPriorityDisjunctionProofs {
-        implicit def disjunctionT[T: WeakTypeTag, S: WeakTypeTag](implicit t: Proof[T]): Proof[Either[T,S]] = new DisjunctionProofT[T, S](t)
-        implicit def disjunctionS[T: WeakTypeTag, S: WeakTypeTag](implicit s: Proof[S]): Proof[Either[T,S]] = new DisjunctionProofS[T, S](s)
+        implicit def disjunctionT[T, S](implicit t: T): Disjunction[T, S] = FromT(t)
+        implicit def disjunctionS[T, S](implicit s: S): Disjunction[T, S] = FromS(s)
       }
 
-      implicit def disjunctionTS[T: WeakTypeTag, S: WeakTypeTag](implicit t: Proof[T], s: Proof[S]): Proof[Either[T, S]] = new DisjunctionProofTS(t, s)
+      implicit def disjunctionTS[T, S](implicit t: T, s: S): Disjunction[T, S] = FromTS(t, s)
 
       "A, B => (A or B)" in {
-        implicit val proofA = Proof[A]
-        implicit val proofB = Proof[B]
+        implicit val proofA = new A
+        implicit val proofB = new B
 
-        println(implicitly[Proof[Either[A, B]]])
+        implicitly[Disjunction[A, B]]
       }
 
       "not A, not B => not (A or B)" in {
-        illTyped { """implicitly[Proof[Either[A, B]]]""" }
+        illTyped { """implicitly[Disjunction[A, B]]""" }
       }
 
       "A, not B => (A or B)" in {
-        implicit val proof = Proof[A]
-        println(implicitly[Proof[Either[A, B]]])
+        implicit val proof = new A
+        implicitly[Disjunction[A, B]].toEither shouldBe Left(proof)
       }
 
       "not A, B => not (A and B)" in {
-        implicit val proof = Proof[B]
-        println(implicitly[Proof[Either[A, B]]])
+        implicit val proof = new B
+        implicitly[Disjunction[A, B]].toEither shouldBe Right(proof)
       }
     }
   }
