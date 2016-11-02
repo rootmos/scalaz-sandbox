@@ -79,7 +79,7 @@ class ProofAssistantExample extends WordSpec with Matchers {
         implicitly[Disjunction[A, B]].toEither shouldBe Left(proof)
       }
 
-      "not A, B => not (A and B)" in {
+      "not A, B => (A or B)" in {
         implicit val proof = new B
         implicitly[Disjunction[A, B]].toEither shouldBe Right(proof)
       }
