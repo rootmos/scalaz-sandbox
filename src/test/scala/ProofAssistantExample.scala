@@ -84,6 +84,26 @@ class ProofAssistantExample extends WordSpec with Matchers {
         implicitly[Disjunction[A, B]].toEither shouldBe Right(proof)
       }
     }
+
+    "negation should use Nothing" when {
+      trait A
+      class Nothingness extends Exception
+      implicit def notA(implicit a: A): Nothing = throw new Nothingness
+
+      "with proof of the negation the world should be absurd" in {
+        implicit val proofA = new A {}
+        // TODO: Better scalatest dsl for this? should be thrownBy didn't work out of the box
+        try {
+          implicitly[Nothing]
+        } catch {
+          case _: Nothingness =>
+        }
+      }
+
+      "without proof I can't deduce bottom" in {
+        illTyped { """implicitly[Nothing]""" }
+      }
+    }
   }
 }
 
