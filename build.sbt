@@ -35,3 +35,4 @@ scalacOptions in (Compile, console) := Seq(
   "-language:higherKinds",
   "-feature")
 
+testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD")
