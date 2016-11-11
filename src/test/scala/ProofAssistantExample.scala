@@ -88,10 +88,29 @@ class ProofAssistantExample extends WordSpec with Matchers {
     "negation should use Nothing" when {
       trait A
       class Nothingness extends Exception
-      implicit def notA(implicit a: A): Nothing = throw new Nothingness
 
-      "with proof of the negation the world should be absurd" in {
+      object Negation {
+        implicit def notA(implicit a: A): Nothing = throw new Nothingness
+      }
+
+      "Nothing is proven anything is be derivable" in {
+        object Absurd {
+          implicit def absurd: Nothing = throw new Nothingness
+        }
+
+        illTyped { """implicitly[Int]""" }
+
+        try {
+          import Absurd._
+          implicitly[Int]
+        } catch {
+          case _: Nothingness =>
+        }
+      }
+
+      "A is proven, the negation should make the world absurd" in {
         implicit val proofA = new A {}
+        import Negation._
         // TODO: Better scalatest dsl for this? should be thrownBy didn't work out of the box
         try {
           implicitly[Nothing]
@@ -100,9 +119,17 @@ class ProofAssistantExample extends WordSpec with Matchers {
         }
       }
 
-      "without proof I can't deduce bottom" in {
+      "when A is not proven, bottom should not be provable" in {
+        import Negation._
         illTyped { """implicitly[Nothing]""" }
       }
+    }
+
+    "double negation should use a function and Nothing" when {
+      trait A
+      class Nothingness extends Exception
+      implicit def notA(implicit a: A): Nothing = throw new Nothingness
+
     }
   }
 }
