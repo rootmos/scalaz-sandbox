@@ -18,5 +18,15 @@ class TraverseExample extends WordSpec with Matchers {
       // Or force it at the end:
       List(1.right,2.right,3.right).sequence[Nothing \/ ?, Int] shouldBe List(1,2,3).right
     }
+
+    "traverse List with Option:s" in {
+      import std.list._
+      import syntax.traverse._
+      import std.option._
+      import syntax.std.boolean._
+
+      List(1,2,3).traverse(x => (x > 0) option (x + 1)) shouldBe Some(List(2,3,4))
+      List(1,-2,3).traverse(x => (x > 0) option (x + 1)) shouldBe None
+    }
   }
 }
