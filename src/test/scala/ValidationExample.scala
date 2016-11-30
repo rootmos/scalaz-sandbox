@@ -50,5 +50,18 @@ class ValidationExample extends WordSpec with Matchers {
       parse(Raw(1, "")) shouldBe List("empty").failure
       parse(Raw(1, "a")) shouldBe Parsed(1, "a").success
     }
+
+    "validate may things" in {
+      case class Raw(i: Int)
+      case class Parsed(i: Int)
+      sealed trait Failure
+      case class NonNegativeRaw(raw: Raw) extends Failure
+
+      def parse(raw: Raw): ValidationNel[Failure, Parsed] =
+        raw.i.success.ensure(NonNegativeRaw(raw))(_ >= 0).toValidationNel map (Parsed)
+
+      List(Raw(1), Raw(-1), Raw(2)).traverseU(parse) shouldBe nels(NonNegativeRaw(Raw(-1))).failure
+      List(Raw(1), Raw(2)).traverseU(parse) shouldBe List(Parsed(1), Parsed(2)).success
+    }
   }
 }
