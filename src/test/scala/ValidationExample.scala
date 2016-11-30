@@ -17,5 +17,22 @@ class ValidationExample extends WordSpec with Matchers {
       parse(Raw(1, "")) shouldBe nels("empty").failure
       parse(Raw(1, "a")) shouldBe Parsed(1, "a").success
     }
+
+    "collect errors in a for-comprehension" in {
+      case class Raw(i: Int, s: String)
+      case class Parsed(i: Int, s: String)
+
+      def parse(raw: Raw): Validation[String, Parsed] = {
+        import Validation.FlatMap._
+        for {
+          i <- raw.i.success.ensure("negative")(_ >= 0)
+          s <- raw.s.success.ensure("empty")(_.nonEmpty)
+        } yield Parsed(i, s)
+      }
+
+      parse(Raw(-1, "")) shouldBe "negative".failure
+      parse(Raw(1, "")) shouldBe "empty".failure
+      parse(Raw(1, "a")) shouldBe Parsed(1, "a").success
+    }
   }
 }
