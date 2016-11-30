@@ -34,5 +34,21 @@ class ValidationExample extends WordSpec with Matchers {
       parse(Raw(1, "")) shouldBe "empty".failure
       parse(Raw(1, "a")) shouldBe Parsed(1, "a").success
     }
+
+    "collect errors with builder" in {
+      case class Raw(i: Int, s: String)
+      case class Parsed(i: Int, s: String)
+
+      def parse(raw: Raw): Validation[List[String], Parsed] = {
+        def parseI = raw.i.success.ensure("negative" :: Nil)(_ >= 0)
+        def parseS = raw.s.success.ensure("empty" :: Nil)(_.nonEmpty)
+
+        (parseI |@| parseS) (Parsed)
+      }
+
+      parse(Raw(-1, "")) shouldBe List("negative", "empty").failure
+      parse(Raw(1, "")) shouldBe List("empty").failure
+      parse(Raw(1, "a")) shouldBe Parsed(1, "a").success
+    }
   }
 }
