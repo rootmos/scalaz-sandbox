@@ -60,12 +60,12 @@ class YonedaExample extends WordSpec with Matchers {
 
     "map on tree" in {
       import Instances._
-      val t = depth(21, "hello")
+      val t = depth(20, "hello")
       t map (_ + "5") map (_ + "7") map (_ + "hehe")
     }
 
     "map on tree faster with coyoneda" in {
-      val t = depth(21, "hello")
+      val t = depth(20, "hello")
       val co = Coyoneda(t)(_ + "5") map (_ + "7") map (_ + "hehe")
 
       {

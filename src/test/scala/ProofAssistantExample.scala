@@ -1,8 +1,10 @@
 import org.scalatest._
 import shapeless.test.illTyped
+import scala.util._
 
 class ProofAssistantExample extends WordSpec with Matchers {
   "ProofAssistantExample" should {
+
     class A
     class B
 
@@ -17,13 +19,15 @@ class ProofAssistantExample extends WordSpec with Matchers {
     }
 
     "tuples are conjunction" when {
+
       implicit def conjuction[T, S](implicit t: T, s: S): (T,S) = (t,s)
 
       "A, B => (A and B)" in {
+
         implicit val proofA = new A
         implicit val proofB = new B
-
         implicitly[(A, B)]
+
       }
 
       "not A, not B => not (A and B)" in {

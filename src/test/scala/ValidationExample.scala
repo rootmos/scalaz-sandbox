@@ -60,7 +60,7 @@ class ValidationExample extends WordSpec with Matchers {
       def parse(raw: Raw): ValidationNel[Failure, Parsed] =
         raw.i.success.ensure(NonNegativeRaw(raw))(_ >= 0).toValidationNel map (Parsed)
 
-      List(Raw(1), Raw(-1), Raw(2)).traverseU(parse) shouldBe nels(NonNegativeRaw(Raw(-1))).failure
+      List(Raw(1), Raw(-1), Raw(2)).traverse[ValidationNel[Failure, ?], Parsed](parse) shouldBe nels(NonNegativeRaw(Raw(-1))).failure
       List(Raw(1), Raw(2)).traverseU(parse) shouldBe List(Parsed(1), Parsed(2)).success
     }
   }
